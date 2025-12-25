@@ -1,0 +1,47 @@
+# Claude Code
+CLAUDE.md
+.claude/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Backend Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+venv/
+.venv/
+
+# Backend data (database & uploads)
+backend/instance/
+backend/static/uploads/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.development
+frontend/.env.production
+
+# Tauri build output
+frontend/src-tauri/target/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Misc
+*.bak
+*.tmp
+image.png
