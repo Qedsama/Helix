@@ -17,7 +17,10 @@ import type {
   User,
 } from '../types';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://47.115.224.89:5000';
+// Production API URL - change this for different deployments
+const PRODUCTION_API_URL = 'http://47.115.224.89:5000';
+
+export const API_BASE_URL = import.meta.env.DEV ? '' : PRODUCTION_API_URL;
 
 export const getImageUrl = (filename: string): string => {
   if (!filename) return '';
