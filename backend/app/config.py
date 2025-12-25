@@ -9,6 +9,11 @@ class Config:
     SQLALCHEMY_DATABASE_URI = 'sqlite:///helix.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # Session cookie settings for cross-origin requests
+    SESSION_COOKIE_SAMESITE = 'None'
+    SESSION_COOKIE_SECURE = False  # Set True if using HTTPS
+    SESSION_COOKIE_HTTPONLY = True
+
     # File uploads
     UPLOAD_FOLDER = 'static/uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
