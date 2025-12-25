@@ -45,11 +45,6 @@ jobs:
         with:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
-      - name: Install dependencies (macOS)
-        if: matrix.platform == 'macos-latest'
-        run: |
-          brew install create-dmg
-
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
@@ -65,9 +60,8 @@ jobs:
           releaseBody: |
             See the assets below to download the installer for your platform.
 
-            - **macOS (Apple Silicon)**: Download the `.dmg` file for arm64
-            - **macOS (Intel)**: Download the `.dmg` file for x64
-            - **Windows**: Download the `.msi` or `.exe` installer
+            - **macOS**: Download the `.app.tar.gz` file and extract
+            - **Windows**: Download the `.exe` installer
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
