@@ -361,13 +361,13 @@ const Assets: React.FC = () => {
                       innerRadius={60}
                       outerRadius={100}
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                     >
                       {pieChartData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value: number) => `¥${value.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`} />
+                    <Tooltip formatter={(value) => value !== undefined ? `¥${Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}` : ''} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -399,7 +399,7 @@ const Assets: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `¥${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(value: number) => `¥${value.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`} />
+                    <Tooltip formatter={(value) => value !== undefined ? `¥${Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}` : ''} />
                     {chartData?.line?.datasets?.map((ds, index) => (
                       <Line
                         key={ds.label}

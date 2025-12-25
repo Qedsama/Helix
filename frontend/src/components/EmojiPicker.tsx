@@ -1,9 +1,17 @@
 import React from 'react';
 import { Popover } from 'antd';
 
+interface EmojiItem {
+  emoji: string;
+  label: string;
+  type: 'badge' | 'emoji';
+  color?: string;
+  bg?: string;
+}
+
 // 飞书风格表情列表 - 基于 Lark emoji types
 // 文字徽章使用不同颜色来区分类别
-export const FEISHU_EMOJIS = [
+export const FEISHU_EMOJIS: EmojiItem[] = [
   // 常用快捷文字徽章 - 飞书风格
   { emoji: 'OK', label: 'OK', type: 'badge', color: '#1890ff', bg: '#e6f7ff' },
   { emoji: 'DONE', label: '完成', type: 'badge', color: '#52c41a', bg: '#f6ffed' },
@@ -39,14 +47,6 @@ export const FEISHU_EMOJIS = [
   { emoji: '😱', label: '惊恐', type: 'emoji' },
   { emoji: '🤯', label: '爆炸', type: 'emoji' },
 ];
-
-interface EmojiItem {
-  emoji: string;
-  label: string;
-  type: 'badge' | 'emoji';
-  color?: string;
-  bg?: string;
-}
 
 interface EmojiPickerProps {
   onSelect: (emoji: string) => void;

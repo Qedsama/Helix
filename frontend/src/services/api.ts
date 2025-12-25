@@ -104,14 +104,16 @@ export const calendarApi = {
   createEvent: (data: {
     title: string;
     description?: string;
-    event_date: string;
+    start_time: string;
+    end_time: string;
     shared: boolean;
   }): Promise<AxiosResponse<CreateResponse>> =>
     api.post('/api/events', data),
   updateEvent: (id: number, data: {
     title: string;
     description?: string;
-    event_date: string;
+    start_time: string;
+    end_time: string;
     shared: boolean;
   }): Promise<AxiosResponse<SuccessResponse>> =>
     api.put(`/api/events/${id}`, data),

@@ -90,6 +90,15 @@ export interface PokerPlayer {
   is_dealer: boolean;
   is_ai: boolean;
   position: number;
+  current_bet: number;
+  hand: string;
+}
+
+export interface PokerWinnerInfo {
+  winner_position: number;
+  winner_name: string;
+  pot_won: number;
+  player_hands: Record<number, string>;
 }
 
 export interface PokerState {
@@ -102,6 +111,27 @@ export interface PokerState {
   available_actions: string[];
   min_raise: number;
   current_bet: number;
+  // Extended fields for full game state
+  my_position?: number | null;
+  public_cards?: string;
+  legal_actions?: number[];
+  action_names?: string[];
+  is_hand_over?: boolean;
+  is_game_over?: boolean;
+  round?: string;
+  hand_number?: number;
+  dealer_position?: number;
+  sb_position?: number;
+  bb_position?: number;
+  small_blind?: number;
+  big_blind?: number;
+  last_action?: { player: number; action: number; action_name: string } | null;
+  pending_ai_action?: boolean;
+  winner_info?: PokerWinnerInfo | null;
+  max_raise?: number;
+  call_amount?: number;
+  error?: string;
+  no_action?: boolean;
 }
 
 // API Response types

@@ -44,7 +44,7 @@ const Dashboard: React.FC = () => {
     const loadData = async () => {
       try {
         const response = await dashboardApi.getData();
-        setData(response.data);
+        setData(response.data.data as DashboardData);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
       } finally {

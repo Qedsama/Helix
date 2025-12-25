@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BaseLayout } from '../components/layout/BaseLayout';
 import { pokerApi } from '../services/api';
+import type { PokerState } from '../types';
 import {
   Card,
   Button,
@@ -13,8 +14,6 @@ import {
   Spin,
   message as antMessage,
   Avatar,
-  Tooltip,
-  Modal,
   Slider,
   InputNumber
 } from 'antd';
@@ -27,49 +26,6 @@ import {
 } from '@ant-design/icons';
 
 const { Text, Title } = Typography;
-
-interface Player {
-  id: number;
-  name: string;
-  position: number;
-  chips: number;
-  is_ai: boolean;
-  is_active: boolean;
-  hand: string;
-  current_bet: number;
-}
-
-interface GameState {
-  game_id: number;
-  status: string;
-  current_player: number;
-  my_position: number | null;
-  players: Player[];
-  public_cards: string;
-  pot: number;
-  legal_actions: number[];
-  action_names: string[];
-  is_hand_over: boolean;
-  is_game_over: boolean;
-  round: string;
-  hand_number: number;
-  dealer_position: number;
-  sb_position: number;
-  bb_position: number;
-  small_blind: number;
-  big_blind: number;
-  last_action: { player: number; action: number; action_name: string } | null;
-  pending_ai_action: boolean;
-  winner_info: {
-    winner_position: number;
-    winner_name: string;
-    pot_won: number;
-    player_hands: Record<number, string>;
-  } | null;
-  min_raise: number;
-  max_raise: number;
-  call_amount: number;
-}
 
 // 扑克牌显示组件
 const PokerCard: React.FC<{ card: string }> = ({ card }) => {
@@ -142,7 +98,7 @@ const HandDisplay: React.FC<{ hand: string }> = ({ hand }) => {
 const PokerGame: React.FC = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [gameState, setGameState] = useState<PokerState | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [raiseAmount, setRaiseAmount] = useState<number>(0);
@@ -188,8 +144,12 @@ const PokerGame: React.FC = () => {
       try {
         const response = await pokerApi.aiAction(parseInt(gameId!));
         if (response.data.game_state) {
-          setGameState(response.data.game_state);
-        } else if (response.data.no_action) {
+          if (response.data.game_state.no_action) {
+            loadGameState();
+          } else {
+            setGameState(response.data.game_state);
+          }
+        } else {
           loadGameState();
         }
       } catch (error) {
@@ -216,8 +176,8 @@ const PokerGame: React.FC = () => {
     setActionLoading(true);
     try {
       const response = await pokerApi.makeAction(parseInt(gameId), action, amount);
-      if (response.data.error) {
-        antMessage.error(response.data.error);
+      if (response.data.game_state?.error) {
+        antMessage.error(response.data.game_state.error);
       } else if (response.data.game_state) {
         setGameState(response.data.game_state);
       }
@@ -264,7 +224,6 @@ const PokerGame: React.FC = () => {
     );
   }
 
-  const myPlayer = gameState.players.find(p => p.position === gameState.my_position);
   const isMyTurn = gameState.my_position !== null && gameState.current_player === gameState.my_position && !gameState.is_hand_over;
 
   return (
@@ -398,8 +357,8 @@ const PokerGame: React.FC = () => {
           ) : isMyTurn ? (
             <div style={{ textAlign: 'center' }}>
               <Text style={{ marginBottom: 12, display: 'block' }}>轮到你行动</Text>
-              <Space size="middle" wrap style={{ marginBottom: gameState.legal_actions.includes(5) ? 16 : 0 }}>
-                {gameState.legal_actions.filter(a => a !== 5).map((action, index) => (
+              <Space size="middle" wrap style={{ marginBottom: gameState.legal_actions?.includes(5) ? 16 : 0 }}>
+                {gameState.legal_actions?.filter(a => a !== 5).map((action) => (
                   <Button
                     key={action}
                     type={action === 4 ? 'primary' : 'default'}
@@ -409,13 +368,13 @@ const PokerGame: React.FC = () => {
                     loading={actionLoading}
                     style={{ minWidth: 100 }}
                   >
-                    {gameState.action_names[gameState.legal_actions.indexOf(action)]}
+                    {gameState.action_names?.[gameState.legal_actions?.indexOf(action) ?? 0] || action}
                   </Button>
                 ))}
               </Space>
 
               {/* 自定义加注控件 */}
-              {gameState.legal_actions.includes(5) && gameState.min_raise > 0 && (
+              {gameState.legal_actions?.includes(5) && gameState.min_raise && gameState.min_raise > 0 && (
                 <div style={{ marginTop: 16, padding: '16px', background: '#f5f5f5', borderRadius: 8 }}>
                   <Text style={{ marginBottom: 8, display: 'block' }}>
                     自定义加注 (范围: {gameState.min_raise} - {gameState.max_raise})
