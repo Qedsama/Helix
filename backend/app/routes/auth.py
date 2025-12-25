@@ -33,12 +33,16 @@ def verify_token(token):
 def load_user_from_token():
     """Load user from Authorization header token."""
     auth_header = request.headers.get('Authorization', '')
+    print(f"[DEBUG] Request: {request.method} {request.path}, Auth header: {auth_header[:50] if auth_header else 'None'}")
     if auth_header.startswith('Bearer '):
         token = auth_header[7:]
         payload = verify_token(token)
         if payload:
             session['user_id'] = payload['user_id']
             session['username'] = payload['username']
+            print(f"[DEBUG] Token valid for user: {payload['username']}")
+        else:
+            print(f"[DEBUG] Token invalid or expired")
 
 
 @bp.route('/api/login', methods=['POST'])
