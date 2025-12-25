@@ -1,6 +1,8 @@
 import { create } from 'zustand';
-import { authApi } from '../services/api';
+import { authApi, setAuthToken } from '../services/api';
 import type { User } from '../types';
+
+const TOKEN_KEY = 'helix_auth_token';
 
 interface AuthState {
   user: User | null;
@@ -20,6 +22,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const response = await authApi.login(username);
       if (response.data.success) {
+        // Save token
+        if (response.data.token) {
+          localStorage.setItem(TOKEN_KEY, response.data.token);
+          setAuthToken(response.data.token);
+        }
         set({
           user: response.data.user,
           isAuthenticated: true,
@@ -36,12 +43,20 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await authApi.logout();
     } finally {
+      localStorage.removeItem(TOKEN_KEY);
+      setAuthToken(null);
       set({ user: null, isAuthenticated: false });
     }
   },
 
   checkAuth: async () => {
     try {
+      // Restore token from localStorage
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (token) {
+        setAuthToken(token);
+      }
+
       const response = await authApi.checkAuth();
       if (response.data.authenticated) {
         set({
@@ -50,9 +65,13 @@ export const useAuthStore = create<AuthState>((set) => ({
           isLoading: false,
         });
       } else {
+        localStorage.removeItem(TOKEN_KEY);
+        setAuthToken(null);
         set({ user: null, isAuthenticated: false, isLoading: false });
       }
     } catch {
+      localStorage.removeItem(TOKEN_KEY);
+      setAuthToken(null);
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },

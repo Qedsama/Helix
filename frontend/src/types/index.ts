@@ -151,6 +151,7 @@ export interface AuthCheckResponse {
 export interface LoginResponse {
   success: boolean;
   message?: string;
+  token?: string;
   user?: User;
 }
 

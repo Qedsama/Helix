@@ -1,9 +1,44 @@
 """Authentication routes."""
-from flask import Blueprint, request, session, jsonify
+import jwt
+from datetime import datetime, timedelta
+from flask import Blueprint, request, session, jsonify, current_app
 from models import db, User
 from app.utils import require_auth
 
 bp = Blueprint('auth', __name__)
+
+
+def generate_token(user):
+    """Generate JWT token for user."""
+    payload = {
+        'user_id': user.id,
+        'username': user.username,
+        'exp': datetime.utcnow() + timedelta(days=30)
+    }
+    return jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+
+
+def verify_token(token):
+    """Verify JWT token and return user info."""
+    try:
+        payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+
+@bp.before_app_request
+def load_user_from_token():
+    """Load user from Authorization header token."""
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.startswith('Bearer '):
+        token = auth_header[7:]
+        payload = verify_token(token)
+        if payload:
+            session['user_id'] = payload['user_id']
+            session['username'] = payload['username']
 
 
 @bp.route('/api/login', methods=['POST'])
@@ -19,11 +54,13 @@ def login():
 
     user = User.query.filter_by(username=username).first()
     if user:
+        token = generate_token(user)
         session['user_id'] = user.id
         session['username'] = user.username
         return jsonify({
             'success': True,
             'message': '登录成功',
+            'token': token,
             'user': {
                 'id': user.id,
                 'username': user.username,

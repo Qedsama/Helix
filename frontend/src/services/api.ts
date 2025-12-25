@@ -37,6 +37,18 @@ const api = axios.create({
   },
 });
 
+// Token management
+let authToken: string | null = null;
+
+export const setAuthToken = (token: string | null) => {
+  authToken = token;
+  if (token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common['Authorization'];
+  }
+};
+
 // Response interceptor
 api.interceptors.response.use(
   (response) => response,
