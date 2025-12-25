@@ -2,9 +2,10 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { BaseLayout } from '../components/layout/BaseLayout';
 import { chatApi, authApi, getImageUrl, validateImageFile } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
+import { useThemeStore } from '../stores/themeStore';
 import { notify, requestNotificationPermission } from '../services/notificationService';
 import type { ChatMessage, User, ChatReaction } from '../types';
-import { Input, Button, Avatar, Upload, Tooltip, Empty, Spin, message as antMessage } from 'antd';
+import { Input, Button, Avatar, Upload, Tooltip, Empty, Spin, message as antMessage, theme } from 'antd';
 import {
   SendOutlined,
   PictureOutlined,
@@ -31,6 +32,12 @@ const Chat: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const notifiedMsgIdsRef = useRef<Set<number>>(new Set());
   const user = useAuthStore((state) => state.user);
+  const { mode } = useThemeStore();
+  const { token: { colorBorder } } = theme.useToken();
+
+  // 夜间模式下的气泡颜色
+  const bubbleBg = mode === 'dark' ? '#3a3a3a' : '#fff';
+  const bubbleColor = mode === 'dark' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.85)';
 
   useEffect(() => {
     const fetchPartner = async () => {
@@ -161,6 +168,10 @@ const Chat: React.FC = () => {
   const renderReactions = (reactions: ChatReaction[] | undefined, messageId: number) => {
     if (!reactions || reactions.length === 0) return null;
 
+    const defaultBg = mode === 'dark' ? '#3a3a3a' : '#f5f5f5';
+    const defaultBorder = mode === 'dark' ? '1px solid #555' : '1px solid #e8e8e8';
+    const countColor = mode === 'dark' ? '#aaa' : '#666';
+
     return (
       <div style={{
         display: 'flex',
@@ -175,15 +186,15 @@ const Chat: React.FC = () => {
           // 使用徽章样式或默认样式
           const baseStyle = badgeStyle
             ? {
-                background: hasReacted ? badgeStyle.bg : '#f5f5f5',
-                border: hasReacted ? `1px solid ${badgeStyle.color}` : '1px solid #e8e8e8',
+                background: hasReacted ? badgeStyle.bg : defaultBg,
+                border: hasReacted ? `1px solid ${badgeStyle.color}` : defaultBorder,
                 color: badgeStyle.color,
                 fontSize: 11,
                 fontWeight: 600 as const,
               }
             : {
-                background: hasReacted ? '#e6f7ff' : '#f5f5f5',
-                border: hasReacted ? '1px solid #1890ff' : '1px solid #e8e8e8',
+                background: hasReacted ? '#e6f7ff' : defaultBg,
+                border: hasReacted ? '1px solid #1890ff' : defaultBorder,
                 fontSize: 14,
                 fontWeight: 400 as const,
               };
@@ -214,7 +225,7 @@ const Chat: React.FC = () => {
               >
                 <span>{reaction.emoji}</span>
                 {reaction.count > 1 && (
-                  <span style={{ fontSize: 11, color: badgeStyle ? badgeStyle.color : '#666' }}>{reaction.count}</span>
+                  <span style={{ fontSize: 11, color: badgeStyle ? badgeStyle.color : countColor }}>{reaction.count}</span>
                 )}
               </div>
             </Tooltip>
@@ -239,9 +250,9 @@ const Chat: React.FC = () => {
       title={partnerName}
       subtitle="在线"
     >
-      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', background: '#fff', borderRadius: 8, overflow: 'hidden', border: '1px solid #f0f0f0' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
         {/* Messages Area */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px', background: '#f5f5f5' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
           {messages.length === 0 ? (
             <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Empty description="开始聊天吧~" image={Empty.PRESENTED_IMAGE_SIMPLE} />
@@ -274,11 +285,11 @@ const Chat: React.FC = () => {
                             style={{
                               padding: '10px 16px',
                               borderRadius: 12,
-                              background: isOwn ? '#1890ff' : '#fff',
-                              color: isOwn ? '#fff' : 'rgba(0,0,0,0.85)',
+                              background: isOwn ? '#1890ff' : bubbleBg,
+                              color: isOwn ? '#fff' : bubbleColor,
                               borderTopRightRadius: isOwn ? 2 : 12,
                               borderTopLeftRadius: isOwn ? 12 : 2,
-                              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
                               wordWrap: 'break-word',
                               whiteSpace: 'pre-wrap'
                             }}
@@ -289,7 +300,7 @@ const Chat: React.FC = () => {
                           <div
                              style={{
                                   padding: 4,
-                                  background: isOwn ? '#1890ff' : '#fff',
+                                  background: isOwn ? '#1890ff' : bubbleBg,
                                   borderRadius: 12,
                                   borderTopRightRadius: isOwn ? 2 : 12,
                                   borderTopLeftRadius: isOwn ? 12 : 2,
@@ -313,11 +324,11 @@ const Chat: React.FC = () => {
                             <Button
                               type="text"
                               size="small"
-                              icon={<SmileOutlined style={{ fontSize: 16, color: '#999' }} />}
+                              icon={<SmileOutlined style={{ fontSize: 16, color: mode === 'dark' ? '#888' : '#999' }} />}
                               style={{
                                 padding: '4px 8px',
                                 height: 'auto',
-                                background: '#f5f5f5',
+                                background: mode === 'dark' ? '#3a3a3a' : '#f5f5f5',
                                 borderRadius: 12
                               }}
                             />
@@ -345,7 +356,7 @@ const Chat: React.FC = () => {
         </div>
 
         {/* Input Area */}
-        <div style={{ padding: '16px', background: '#fff', borderTop: '1px solid #f0f0f0' }}>
+        <div style={{ padding: '16px', borderTop: `1px solid ${colorBorder}` }}>
             <div style={{ marginBottom: 8, display: 'flex', gap: 16 }}>
                 <Upload {...uploadProps}>
                     <Tooltip title="发送图片">

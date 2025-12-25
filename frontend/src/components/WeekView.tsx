@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Popconfirm, Button, Tooltip } from 'antd';
+import { Card, Popconfirm, Button, Tooltip, theme } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import type { CalendarEvent } from '../types';
 import dayjs from 'dayjs';
@@ -29,6 +29,9 @@ const WeekView: React.FC<WeekViewProps> = ({
   onEventDelete,
   onDateClick,
 }) => {
+  const {
+    token: { colorBorder, colorBorderSecondary, colorTextSecondary, colorText, colorPrimaryBg },
+  } = theme.useToken();
   // 获取当前周的起始日期（周一）
   const getWeekStart = (date: Dayjs) => {
     const day = date.day();
@@ -79,7 +82,7 @@ const WeekView: React.FC<WeekViewProps> = ({
     <Card bordered={false} style={{ borderRadius: 8 }}>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {/* 头部：星期和日期 */}
-        <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0', paddingBottom: 8 }}>
+        <div style={{ display: 'flex', borderBottom: `1px solid ${colorBorder}`, paddingBottom: 8 }}>
           {/* 时间列占位 */}
           <div style={{ width: 60, flexShrink: 0 }} />
 
@@ -95,20 +98,20 @@ const WeekView: React.FC<WeekViewProps> = ({
               }}
               onClick={() => onDateClick?.(day)}
             >
-              <div style={{ fontSize: 12, color: '#999' }}>
+              <div style={{ fontSize: 12, color: colorTextSecondary }}>
                 {['周一', '周二', '周三', '周四', '周五', '周六', '周日'][index]}
               </div>
               <div
                 style={{
                   fontSize: 20,
                   fontWeight: isToday(day) ? 'bold' : 'normal',
-                  color: isToday(day) ? '#1890ff' : '#333',
+                  color: isToday(day) ? '#1890ff' : colorText,
                   width: 36,
                   height: 36,
                   lineHeight: '36px',
                   borderRadius: '50%',
                   margin: '4px auto 0',
-                  background: isToday(day) ? '#e6f7ff' : 'transparent',
+                  background: isToday(day) ? colorPrimaryBg : 'transparent',
                 }}
               >
                 {day.date()}
@@ -126,14 +129,14 @@ const WeekView: React.FC<WeekViewProps> = ({
                 key={hour}
                 style={{
                   height: HOUR_HEIGHT,
-                  borderBottom: '1px solid #f5f5f5',
+                  borderBottom: `1px solid ${colorBorderSecondary}`,
                   display: 'flex',
                   alignItems: 'flex-start',
                   justifyContent: 'flex-end',
                   paddingRight: 8,
                   paddingTop: 0,
                   fontSize: 12,
-                  color: '#999',
+                  color: colorTextSecondary,
                 }}
               >
                 {hour.toString().padStart(2, '0')}:00
@@ -151,8 +154,8 @@ const WeekView: React.FC<WeekViewProps> = ({
                 style={{
                   flex: 1,
                   position: 'relative',
-                  borderLeft: '1px solid #f0f0f0',
-                  background: isToday(day) ? '#fafafa' : 'transparent',
+                  borderLeft: `1px solid ${colorBorder}`,
+                  background: isToday(day) ? colorPrimaryBg : 'transparent',
                 }}
               >
                 {/* 小时网格线 */}
@@ -161,7 +164,7 @@ const WeekView: React.FC<WeekViewProps> = ({
                     key={hour}
                     style={{
                       height: HOUR_HEIGHT,
-                      borderBottom: '1px solid #f5f5f5',
+                      borderBottom: `1px solid ${colorBorderSecondary}`,
                     }}
                   />
                 ))}

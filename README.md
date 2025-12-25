@@ -59,10 +59,6 @@ python run.py
 
 The API server runs at `http://localhost:5000`
 
-Default users:
-- `qed` (password: `qed123`)
-- `carolina` (password: `carolina123`)
-
 ### Frontend Development
 
 ```bash

@@ -23,6 +23,7 @@ import {
   Spin,
   Segmented,
   Select,
+  theme,
 } from 'antd';
 import { PlusOutlined, DeleteOutlined, ClockCircleOutlined, UserOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -45,6 +46,9 @@ const Calendar: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
   const [form] = Form.useForm();
   const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const {
+    token: { colorBgContainer },
+  } = theme.useToken();
 
   // Drawer state for viewing events on a specific day
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -234,7 +238,7 @@ const Calendar: React.FC = () => {
     >
       {/* 月视图 / 年视图 */}
       {(viewMode === 'month' || viewMode === 'year') && (
-        <div style={{ background: '#fff', padding: 24, borderRadius: 8 }}>
+        <div style={{ background: colorBgContainer, padding: 24, borderRadius: 8 }}>
           <AntCalendar
             value={selectedDate}
             onSelect={onSelect}
@@ -292,7 +296,7 @@ const Calendar: React.FC = () => {
       {/* 周视图 */}
       {viewMode === 'week' && (
         <>
-          <div style={{ background: '#fff', padding: '8px 24px', borderRadius: '8px 8px 0 0', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <div style={{ background: colorBgContainer, padding: '8px 24px', borderRadius: '8px 8px 0 0', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
             <Select
               value={selectedDate.year()}
               onChange={(newYear) => setSelectedDate(prev => prev.year(newYear))}

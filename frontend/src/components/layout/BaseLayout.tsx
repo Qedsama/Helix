@@ -48,35 +48,50 @@ export const BaseLayout: React.FC<BaseLayoutProps> = ({
   headerActions,
 }) => {
   const { user, logout } = useAuthStore();
+  const { mode, toggleTheme } = useThemeStore();
   const location = useLocation();
   const navigate = useNavigate();
   const {
-    token: { colorBgContainer, colorBgLayout },
+    token: { colorBgContainer, colorBgLayout, colorBorder },
   } = theme.useToken();
 
   const currentNav = navItems.find(item => item.path === location.pathname);
+
+  // 根据主题模式设置侧边栏样式
+  const siderStyle = mode === 'dark'
+    ? {
+        background: '#1f1f1f',
+        borderRight: '1px solid rgba(255, 255, 255, 0.1)'
+      }
+    : {
+        background: '#f5f5f5',
+        borderRight: `1px solid ${colorBorder}`
+      };
+
+  const iconColor = mode === 'dark' ? '#a6a6a6' : '#666';
+  const iconActiveColor = '#fff';
+  const avatarBorder = mode === 'dark' ? '2px solid rgba(255,255,255,0.2)' : '2px solid rgba(0,0,0,0.1)';
 
   return (
     <Layout style={{ height: '100vh', overflow: 'hidden' }}>
       <Sider
         width={64}
         style={{
-          background: '#2e2e2e',
+          ...siderStyle,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           paddingTop: 24,
           paddingBottom: 16,
-          borderRight: '1px solid rgba(255, 255, 255, 0.1)'
         }}
-        theme="dark"
+        theme={mode}
       >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', width: '100%' }}>
           {/* User Avatar - Moved to top */}
            <Avatar
               src={getImageUrl(user?.avatar || '')}
               size={40}
-              style={{ marginBottom: 24, cursor: 'pointer', border: '2px solid rgba(255,255,255,0.2)' }}
+              style={{ marginBottom: 24, cursor: 'pointer', border: avatarBorder }}
            >
               {user?.username?.[0]?.toUpperCase()}
            </Avatar>
@@ -97,9 +112,9 @@ export const BaseLayout: React.FC<BaseLayoutProps> = ({
                     cursor: 'pointer',
                     transition: 'all 0.3s',
                     backgroundColor: location.pathname === item.path ? '#1890ff' : 'transparent',
-                    color: location.pathname === item.path ? '#fff' : '#a6a6a6',
+                    color: location.pathname === item.path ? iconActiveColor : iconColor,
                   }}
-                  className="hover:bg-white/10 hover:text-white"
+                  className={mode === 'dark' ? 'hover:bg-white/10 hover:text-white' : 'hover:bg-black/5 hover:text-black'}
                 >
                   {item.icon}
                 </div>
@@ -109,6 +124,27 @@ export const BaseLayout: React.FC<BaseLayoutProps> = ({
 
           {/* Bottom Actions */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', width: '100%' }}>
+            {/* Theme Toggle */}
+            <Tooltip title={mode === 'dark' ? '切换亮色模式' : '切换暗色模式'} placement="right">
+               <div
+                  onClick={toggleTheme}
+                  style={{
+                    width: 44,
+                    height: 44,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    color: iconColor,
+                  }}
+                  className={mode === 'dark' ? 'hover:text-white' : 'hover:text-black'}
+                >
+                  {mode === 'dark' ? <SunOutlined style={{ fontSize: '20px' }} /> : <MoonOutlined style={{ fontSize: '20px' }} />}
+                </div>
+            </Tooltip>
+
             <Tooltip title="设置" placement="right">
                <div
                   onClick={() => navigate('/settings')}
@@ -121,9 +157,10 @@ export const BaseLayout: React.FC<BaseLayoutProps> = ({
                     borderRadius: 8,
                     cursor: 'pointer',
                     transition: 'all 0.3s',
-                    color: location.pathname === '/settings' ? '#fff' : '#a6a6a6',
+                    color: location.pathname === '/settings' ? iconActiveColor : iconColor,
+                    backgroundColor: location.pathname === '/settings' ? '#1890ff' : 'transparent',
                   }}
-                  className="hover:text-white"
+                  className={mode === 'dark' ? 'hover:text-white' : 'hover:text-black'}
                 >
                   <SettingOutlined style={{ fontSize: '20px' }} />
                 </div>
@@ -141,7 +178,7 @@ export const BaseLayout: React.FC<BaseLayoutProps> = ({
                     borderRadius: 8,
                     cursor: 'pointer',
                     transition: 'all 0.3s',
-                    color: '#a6a6a6',
+                    color: iconColor,
                   }}
                   className="hover:text-red-500"
                 >

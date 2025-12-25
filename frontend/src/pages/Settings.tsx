@@ -2,22 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BaseLayout } from '../components/layout/BaseLayout';
 import { useAuthStore } from '../stores/authStore';
+import { useThemeStore } from '../stores/themeStore';
 import { getImageUrl } from '../services/api';
-import { Card, Button, Input, Form, Tabs, Typography, Avatar, Descriptions, message as antMessage } from 'antd';
+import { Card, Button, Input, Form, Tabs, Typography, Avatar, Descriptions, message as antMessage, Switch, theme } from 'antd';
 import {
   UserOutlined,
   LogoutOutlined,
   SaveOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  BulbOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
 const Settings: React.FC = () => {
   const { user, logout } = useAuthStore();
+  const { mode, setTheme } = useThemeStore();
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const {
+    token: { colorBgContainer },
+  } = theme.useToken();
 
   // Initialize form with user data
   useEffect(() => {
@@ -106,6 +112,33 @@ const Settings: React.FC = () => {
       ),
     },
     {
+      key: 'appearance',
+      label: (
+        <span>
+          <BulbOutlined />
+          外观
+        </span>
+      ),
+      children: (
+        <Card bordered={false} title="外观设置">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 600 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <Title level={5} style={{ margin: 0 }}>暗色模式</Title>
+                        <Text type="secondary">切换应用的亮色/暗色主题</Text>
+                    </div>
+                    <Switch
+                        checked={mode === 'dark'}
+                        onChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                        checkedChildren="暗"
+                        unCheckedChildren="亮"
+                    />
+                </div>
+            </div>
+        </Card>
+      ),
+    },
+    {
         key: 'about',
         label: (
             <span>
@@ -137,7 +170,7 @@ const Settings: React.FC = () => {
       title="设置"
       subtitle="管理您的账户和偏好"
     >
-      <div style={{ background: '#fff', padding: 24, borderRadius: 8, minHeight: 'calc(100vh - 140px)' }}>
+      <div style={{ background: colorBgContainer, padding: 24, borderRadius: 8, minHeight: 'calc(100vh - 140px)' }}>
         <Tabs defaultActiveKey="profile" items={items} tabPosition="left" />
       </div>
     </BaseLayout>
