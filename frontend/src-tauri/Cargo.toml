@@ -1,6 +1,6 @@
 [package]
 name = "helix"
-version = "0.2.1"
+version = "0.2.2"
 description = "Helix - Couples' Private Space App"
 authors = ["Helix Team"]
 edition = "2021"
