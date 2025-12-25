@@ -17,7 +17,7 @@ import type {
   User,
 } from '../types';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://47.115.224.89:5000';
 
 export const getImageUrl = (filename: string): string => {
   if (!filename) return '';
