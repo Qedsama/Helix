@@ -159,14 +159,14 @@ const Dashboard: React.FC = () => {
                         suffix={stat.suffix}
                         valueStyle={{ fontWeight: 'bold' }}
                     />
-                    <div style={{ 
-                        width: 48, 
-                        height: 48, 
-                        borderRadius: 12, 
-                        background: 'rgba(0,0,0,0.04)', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center' 
+                    <div style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 12,
+                        background: mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
                     }}>
                         {stat.icon}
                     </div>

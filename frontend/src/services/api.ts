@@ -18,9 +18,8 @@ import type {
 } from '../types';
 
 // Production API URL - change this for different deployments
-const PRODUCTION_API_URL = 'http://47.115.224.89:5000';
-
-export const API_BASE_URL = import.meta.env.DEV ? '' : PRODUCTION_API_URL;
+// Configure via VITE_API_BASE_URL in .env.production file
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 export const getImageUrl = (filename: string): string => {
   if (!filename) return '';
@@ -71,6 +70,10 @@ export const authApi = {
     api.get('/api/users'),
   getUser: (): Promise<AxiosResponse<{ success: boolean; user: User }>> =>
     api.get('/api/user'),
+  uploadAvatar: (formData: FormData): Promise<AxiosResponse<{ success: boolean; avatar: string }>> =>
+    api.post('/api/user/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };
 
 // Assets API
@@ -140,7 +143,7 @@ export const chatApi = {
   send: (content: string): Promise<AxiosResponse<CreateResponse>> =>
     api.post('/api/chat/send', { content }),
   uploadImage: (formData: FormData): Promise<AxiosResponse<CreateResponse>> =>
-    api.post('/chat/upload_image', formData, {
+    api.post('/api/chat/upload_image', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
   getUnreadCount: (): Promise<AxiosResponse<{ count: number }>> =>

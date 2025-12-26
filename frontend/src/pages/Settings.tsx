@@ -1,26 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BaseLayout } from '../components/layout/BaseLayout';
 import { useAuthStore } from '../stores/authStore';
 import { useThemeStore } from '../stores/themeStore';
-import { getImageUrl } from '../services/api';
+import { getImageUrl, authApi, validateImageFile } from '../services/api';
 import { Card, Button, Input, Form, Tabs, Typography, Avatar, Descriptions, message as antMessage, Switch, theme } from 'antd';
 import {
   UserOutlined,
   LogoutOutlined,
   SaveOutlined,
   InfoCircleOutlined,
-  BulbOutlined
+  BulbOutlined,
+  CameraOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
 const Settings: React.FC = () => {
-  const { user, logout } = useAuthStore();
+  const { user, logout, refreshUser } = useAuthStore();
   const { mode, setTheme } = useThemeStore();
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const {
     token: { colorBgContainer },
   } = theme.useToken();
@@ -37,6 +40,41 @@ const Settings: React.FC = () => {
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      antMessage.error(validation.error);
+      return;
+    }
+
+    setAvatarLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const response = await authApi.uploadAvatar(formData);
+      if (response.data.success) {
+        antMessage.success('头像更新成功');
+        refreshUser();
+      } else {
+        antMessage.error('头像更新失败');
+      }
+    } catch {
+      antMessage.error('头像上传失败');
+    } finally {
+      setAvatarLoading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const handleSaveProfile = async (values: { username: string }) => {
@@ -75,15 +113,44 @@ const Settings: React.FC = () => {
         <Card bordered={false} title="基本信息">
             <div style={{ display: 'flex', gap: 32, flexDirection: 'column', maxWidth: 600 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-                     <Avatar
-                        size={80}
-                        src={getImageUrl(user?.avatar || '')}
-                        icon={<UserOutlined />}
-                        style={{ backgroundColor: '#1890ff' }}
-                     />
+                     <div
+                       style={{ position: 'relative', cursor: 'pointer' }}
+                       onClick={handleAvatarClick}
+                     >
+                       <Avatar
+                          size={80}
+                          src={getImageUrl(user?.avatar || '')}
+                          icon={<UserOutlined />}
+                          style={{ backgroundColor: '#1890ff', opacity: avatarLoading ? 0.5 : 1 }}
+                       />
+                       <div style={{
+                         position: 'absolute',
+                         bottom: 0,
+                         right: 0,
+                         background: '#1890ff',
+                         borderRadius: '50%',
+                         width: 24,
+                         height: 24,
+                         display: 'flex',
+                         alignItems: 'center',
+                         justifyContent: 'center',
+                         border: '2px solid white'
+                       }}>
+                         <CameraOutlined style={{ color: 'white', fontSize: 12 }} />
+                       </div>
+                       <input
+                         type="file"
+                         ref={fileInputRef}
+                         style={{ display: 'none' }}
+                         accept="image/png,image/jpeg,image/gif"
+                         onChange={handleAvatarChange}
+                       />
+                     </div>
                      <div>
                          <Title level={4} style={{ margin: 0 }}>{user?.username || '用户'}</Title>
                          <Text type="secondary">ID: {user?.id}</Text>
+                         <br />
+                         <Text type="secondary" style={{ fontSize: 12 }}>点击头像更换</Text>
                      </div>
                 </div>
 

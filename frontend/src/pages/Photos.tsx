@@ -235,7 +235,7 @@ const Photos: React.FC = () => {
                                                 </span>
                                             </div>
                                         }
-                                        description={<div style={{ color: 'rgba(0,0,0,0.85)', whiteSpace: 'pre-wrap' }}>{msg.content}</div>}
+                                        description={<div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>}
                                     />
                                 </List.Item>
                             )}

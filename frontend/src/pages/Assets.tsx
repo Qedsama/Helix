@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BaseLayout } from '../components/layout/BaseLayout';
 import { assetApi } from '../services/api';
 import type { Asset } from '../types';
+import { useThemeStore } from '../stores/themeStore';
 import {
   Table,
   Button,
@@ -18,7 +19,8 @@ import {
   Space,
   message,
   DatePicker,
-  Segmented
+  Segmented,
+  theme
 } from 'antd';
 import {
   PlusOutlined,
@@ -71,6 +73,9 @@ const Assets: React.FC = () => {
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [form] = Form.useForm();
   const [messageApi, contextHolder] = message.useMessage();
+  const { mode } = useThemeStore();
+  const { token } = theme.useToken();
+  const isDark = mode === 'dark';
 
   // Chart state
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
@@ -336,7 +341,7 @@ const Assets: React.FC = () => {
               title="资产分布"
               size="small"
               bordered={false}
-              style={{ background: '#fafafa' }}
+              style={{ background: token.colorBgContainer }}
               extra={
                 <Select
                   value={pieType}
@@ -361,13 +366,32 @@ const Assets: React.FC = () => {
                       innerRadius={60}
                       outerRadius={100}
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                      label={({ name, percent, x, y }) => (
+                        <text
+                          x={x}
+                          y={y}
+                          fill={token.colorText}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fontSize={12}
+                        >
+                          {`${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                        </text>
+                      )}
+                      labelLine={{ stroke: token.colorTextSecondary }}
                     >
                       {pieChartData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => value !== undefined ? `¥${Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}` : ''} />
+                    <Tooltip
+                      formatter={(value) => value !== undefined ? `¥${Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}` : ''}
+                      contentStyle={{
+                        backgroundColor: token.colorBgElevated,
+                        borderColor: token.colorBorder,
+                        color: token.colorText
+                      }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -380,7 +404,7 @@ const Assets: React.FC = () => {
               title="资产趋势"
               size="small"
               bordered={false}
-              style={{ background: '#fafafa' }}
+              style={{ background: token.colorBgContainer }}
               extra={
                 <Segmented
                   size="small"
@@ -396,10 +420,25 @@ const Assets: React.FC = () => {
               <div style={{ height: 280 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={lineChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `¥${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(value) => value !== undefined ? `¥${Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}` : ''} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#333' : '#eee'} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 12, fill: token.colorTextSecondary }}
+                      stroke={token.colorBorder}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 12, fill: token.colorTextSecondary }}
+                      tickFormatter={(v) => `¥${(v / 1000).toFixed(0)}k`}
+                      stroke={token.colorBorder}
+                    />
+                    <Tooltip
+                      formatter={(value) => value !== undefined ? `¥${Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}` : ''}
+                      contentStyle={{
+                        backgroundColor: token.colorBgElevated,
+                        borderColor: token.colorBorder,
+                        color: token.colorText
+                      }}
+                    />
                     {chartData?.line?.datasets?.map((ds, index) => (
                       <Line
                         key={ds.label}
@@ -410,7 +449,7 @@ const Assets: React.FC = () => {
                         dot={false}
                       />
                     ))}
-                    {lineType === 'category' && <Legend />}
+                    {lineType === 'category' && <Legend wrapperStyle={{ color: token.colorText }} />}
                   </LineChart>
                 </ResponsiveContainer>
               </div>

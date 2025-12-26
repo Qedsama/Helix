@@ -52,7 +52,7 @@ export const BaseLayout: React.FC<BaseLayoutProps> = ({
   const location = useLocation();
   const navigate = useNavigate();
   const {
-    token: { colorBgContainer, colorBgLayout, colorBorder },
+    token: { colorBgContainer, colorBgLayout, colorBorder, colorTextSecondary },
   } = theme.useToken();
 
   const currentNav = navItems.find(item => item.path === location.pathname);
@@ -190,11 +190,11 @@ export const BaseLayout: React.FC<BaseLayoutProps> = ({
       </Sider>
 
       <Layout style={{ background: colorBgLayout }}>
-        <Header 
-            style={{ 
-                padding: '0 24px', 
-                background: colorBgContainer, 
-                borderBottom: '1px solid rgba(0,0,0,0.06)',
+        <Header
+            style={{
+                padding: '0 24px',
+                background: colorBgContainer,
+                borderBottom: `1px solid ${colorBorder}`,
                 height: 64,
                 display: 'flex',
                 alignItems: 'center',
@@ -230,7 +230,7 @@ export const BaseLayout: React.FC<BaseLayoutProps> = ({
                {(title || subtitle) && (
                    <div style={{ marginBottom: 24 }}>
                        {title && !currentNav && <h1 style={{ margin: 0, fontSize: 24 }}>{title}</h1>}
-                       {subtitle && <p style={{ color: 'rgba(0,0,0,0.45)', marginTop: 8 }}>{subtitle}</p>}
+                       {subtitle && <p style={{ color: colorTextSecondary, marginTop: 8 }}>{subtitle}</p>}
                    </div>
                )}
                
