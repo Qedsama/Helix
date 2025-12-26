@@ -27,12 +27,10 @@ import {
 } from 'antd';
 import { PlusOutlined, DeleteOutlined, ClockCircleOutlined, UserOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
 import type { Dayjs } from 'dayjs';
 
-dayjs.extend(utc);
-
-const toLocalTime = (time: string) => dayjs.utc(time).utcOffset(8);
+// 直接解析时间，后端存储的已经是本地时间
+const toLocalTime = (time: string) => dayjs(time);
 
 const { TextArea } = Input;
 const { Text } = Typography;
