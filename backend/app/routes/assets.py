@@ -191,18 +191,6 @@ def get_chart_data():
             'labels': list(asset_categories.keys()),
             'data': list(asset_categories.values())
         }
-    elif pie_type == 'type':
-        asset_types = {}
-        for asset in assets:
-            asset_type = asset.type
-            if asset_type not in asset_types:
-                asset_types[asset_type] = 0
-            asset_types[asset_type] += asset.amount
-
-        pie_data = {
-            'labels': list(asset_types.keys()),
-            'data': list(asset_types.values())
-        }
     elif pie_type == 'item':
         pie_data = {
             'labels': [asset.name for asset in assets],

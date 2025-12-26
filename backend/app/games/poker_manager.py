@@ -24,43 +24,74 @@ class RuleBasedAI:
 
     # 翻牌前起手牌分级 (Chen公式简化版)
     PREMIUM_HANDS = {'AA', 'KK', 'QQ', 'AKs', 'AKo'}  # 顶级牌
-    STRONG_HANDS = {'JJ', 'TT', 'AQs', 'AQo', 'AJs', 'KQs'}  # 强牌
-    PLAYABLE_HANDS = {'99', '88', '77', 'ATs', 'AJo', 'KJs', 'KQo', 'QJs', 'JTs'}  # 可玩牌
+    STRONG_HANDS = {'JJ', 'TT', 'AQs', 'AQo', 'AJs', 'KQs', '99'}  # 强牌
+    PLAYABLE_HANDS = {'88', '77', '66', 'ATs', 'AJo', 'KJs', 'KQo', 'QJs', 'JTs', 'KTs', 'QTs', 'A9s', 'A8s', 'A7s', 'A6s', 'A5s', 'A4s', 'A3s', 'A2s'}  # 可玩牌
 
     def __init__(self, difficulty: str = 'medium'):
         self.difficulty = difficulty
         # 难度影响: easy更被动, hard更激进且会诈唬
-        self.aggression = {'easy': 0.2, 'medium': 0.5, 'hard': 0.7}.get(difficulty, 0.5)
-        self.bluff_frequency = {'easy': 0.05, 'medium': 0.15, 'hard': 0.25}.get(difficulty, 0.15)
+        self.aggression = {'easy': 0.3, 'medium': 0.5, 'hard': 0.7}.get(difficulty, 0.5)
+        self.bluff_frequency = {'easy': 0.1, 'medium': 0.2, 'hard': 0.3}.get(difficulty, 0.2)
+        self.call_loose = {'easy': 0.4, 'medium': 0.5, 'hard': 0.3}.get(difficulty, 0.5)  # 跟注宽松度
 
     def _get_preflop_strength(self, hand: List[str]) -> int:
         """翻牌前手牌强度: 0=弱, 1=可玩, 2=强, 3=顶级"""
         if len(hand) < 2:
             return 0
 
-        r1, s1 = hand[0][:-1], hand[0][-1]
-        r2, s2 = hand[1][:-1], hand[1][-1]
+        # 解析牌面，处理可能的不同格式
+        card1, card2 = str(hand[0]), str(hand[1])
+
+        # 提取rank和suit
+        r1 = card1[0] if len(card1) >= 2 else card1
+        s1 = card1[-1] if len(card1) >= 2 else ''
+        r2 = card2[0] if len(card2) >= 2 else card2
+        s2 = card2[-1] if len(card2) >= 2 else ''
 
         is_suited = s1 == s2
         is_pair = r1 == r2
 
-        # 标准化表示
+        # 标准化表示 - 大的在前
         ranks = 'AKQJT98765432'
-        if ranks.index(r1) > ranks.index(r2):
+        r1_idx = ranks.find(r1) if r1 in ranks else 99
+        r2_idx = ranks.find(r2) if r2 in ranks else 99
+        if r1_idx > r2_idx:
             r1, r2 = r2, r1
 
-        hand_str = f"{r1}{r2}{'s' if is_suited else 'o'}"
         if is_pair:
             hand_str = f"{r1}{r2}"
+        else:
+            hand_str = f"{r1}{r2}{'s' if is_suited else 'o'}"
 
-        if hand_str in self.PREMIUM_HANDS or is_pair and r1 in 'AK':
+        # 对子特殊处理
+        if is_pair:
+            if r1 in 'AK':
+                return 3  # AA, KK
+            if r1 in 'QJT':
+                return 2  # QQ, JJ, TT
+            if r1 in '9876':
+                return 1  # 中对
+            return 1  # 小对子也算可玩
+
+        if hand_str in self.PREMIUM_HANDS:
             return 3
-        if hand_str in self.STRONG_HANDS or is_pair and r1 in 'QJT':
+        if hand_str in self.STRONG_HANDS:
             return 2
-        if hand_str in self.PLAYABLE_HANDS or is_pair:
+        if hand_str in self.PLAYABLE_HANDS:
             return 1
-        if 'A' in [r1, r2] and is_suited:
+
+        # 同花连张
+        if is_suited:
+            gap = abs(r1_idx - r2_idx)
+            if gap <= 2 and r1_idx < 8:  # 同花连张或隔一张
+                return 1
+            if r1 == 'A':  # 任何同花A
+                return 1
+
+        # 高张
+        if r1 in 'AK' and r2_idx < 6:
             return 1
+
         return 0
 
     def _get_postflop_strength(self, game: TexasHoldEm, player_id: int) -> float:
@@ -93,33 +124,100 @@ class RuleBasedAI:
         rand = random.random()
         phase = game.hand_phase
 
+        # 计算当前需要跟注的金额（相对于大盲的倍数）
+        current_player = game.players[player_id]
+        chips = current_player.chips
+
         # 翻牌前策略
         if phase == HandPhase.PREFLOP:
             strength = self._get_preflop_strength(hand_str)
 
-            if strength == 3:  # 顶级牌
+            if strength == 3:  # 顶级牌 - 积极加注
                 if can_raise and moves.raise_range:
-                    # 3-4倍大盲加注
-                    raise_amt = min(game.big_blind * random.randint(3, 4), moves.raise_range.stop - 1)
+                    raise_amt = min(game.big_blind * random.randint(3, 5), moves.raise_range.stop - 1)
                     raise_amt = max(raise_amt, moves.raise_range.start)
                     return ActionType.RAISE, raise_amt
                 if can_call:
                     return ActionType.CALL, None
+                if can_check:
+                    return ActionType.CHECK, None
 
-            elif strength == 2:  # 强牌
-                if can_raise and rand < self.aggression and moves.raise_range:
+            elif strength == 2:  # 强牌 - 经常加注
+                if can_raise and rand < (0.6 + self.aggression * 0.3) and moves.raise_range:
+                    raise_amt = min(game.big_blind * random.randint(2, 4), moves.raise_range.stop - 1)
+                    raise_amt = max(raise_amt, moves.raise_range.start)
+                    return ActionType.RAISE, raise_amt
+                if can_call:
+                    return ActionType.CALL, None
+                if can_check:
+                    return ActionType.CHECK, None
+
+            elif strength == 1:  # 可玩牌 - 主要跟注，偶尔加注
+                if can_raise and rand < 0.2 * self.aggression and moves.raise_range:
+                    raise_amt = min(game.big_blind * 2, moves.raise_range.stop - 1)
+                    raise_amt = max(raise_amt, moves.raise_range.start)
+                    return ActionType.RAISE, raise_amt
+                if can_check:
+                    return ActionType.CHECK, None
+                if can_call and rand < (0.7 + self.call_loose * 0.3):
+                    return ActionType.CALL, None
+                if can_fold:
+                    return ActionType.FOLD, None
+
+            else:  # 弱牌 - 但不要总是弃牌
+                # 诈唬加注
+                if can_raise and rand < self.bluff_frequency and moves.raise_range:
                     raise_amt = min(game.big_blind * 3, moves.raise_range.stop - 1)
                     raise_amt = max(raise_amt, moves.raise_range.start)
                     return ActionType.RAISE, raise_amt
+                if can_check:
+                    return ActionType.CHECK, None
+                # 偶尔用弱牌跟注（尤其是大盲位）
+                if can_call and rand < self.call_loose * 0.5:
+                    return ActionType.CALL, None
+                if can_fold:
+                    return ActionType.FOLD, None
+
+        # 翻牌后策略 - 使用实际牌力评估
+        else:
+            strength = self._get_postflop_strength(game, player_id)
+            pot = sum(p.amount for p in game.pots) if game.pots else game.big_blind * 2
+
+            if strength > 0.75:  # 很强的牌 (top 25%)
+                if can_allin and rand < 0.15 * self.aggression:
+                    return ActionType.ALL_IN, None
+                if can_raise and moves.raise_range:
+                    bet_size = int(pot * random.uniform(0.6, 1.2))
+                    raise_amt = max(moves.raise_range.start, min(bet_size, moves.raise_range.stop - 1))
+                    return ActionType.RAISE, raise_amt
                 if can_call:
                     return ActionType.CALL, None
                 if can_check:
                     return ActionType.CHECK, None
 
-            elif strength == 1:  # 可玩牌
+            elif strength > 0.5:  # 中等牌 (top 50%)
+                if can_raise and rand < 0.3 * self.aggression and moves.raise_range:
+                    bet_size = int(pot * random.uniform(0.3, 0.6))
+                    raise_amt = max(moves.raise_range.start, min(bet_size, moves.raise_range.stop - 1))
+                    return ActionType.RAISE, raise_amt
                 if can_check:
                     return ActionType.CHECK, None
-                if can_call and rand < 0.6:
+                if can_call and rand < 0.8:
+                    return ActionType.CALL, None
+                if can_fold and rand > 0.7:
+                    return ActionType.FOLD, None
+                if can_call:
+                    return ActionType.CALL, None
+
+            elif strength > 0.3:  # 较弱但有潜力
+                if can_check:
+                    return ActionType.CHECK, None
+                # 诈唬
+                if can_raise and rand < self.bluff_frequency * 0.5 and moves.raise_range:
+                    bet_size = int(pot * 0.4)
+                    raise_amt = max(moves.raise_range.start, min(bet_size, moves.raise_range.stop - 1))
+                    return ActionType.RAISE, raise_amt
+                if can_call and rand < 0.5:
                     return ActionType.CALL, None
                 if can_fold:
                     return ActionType.FOLD, None
@@ -127,52 +225,14 @@ class RuleBasedAI:
             else:  # 弱牌
                 # 偶尔诈唬
                 if can_raise and rand < self.bluff_frequency and moves.raise_range:
-                    raise_amt = moves.raise_range.start
-                    return ActionType.RAISE, raise_amt
-                if can_check:
-                    return ActionType.CHECK, None
-                if can_fold:
-                    return ActionType.FOLD, None
-
-        # 翻牌后策略 - 使用实际牌力评估
-        else:
-            strength = self._get_postflop_strength(game, player_id)
-            pot = sum(p.amount for p in game.pots)
-
-            if strength > 0.7:  # 强牌 (top 30%)
-                if can_allin and rand < 0.1 * self.aggression:
-                    return ActionType.ALL_IN, None
-                if can_raise and moves.raise_range:
-                    # 下注 50-100% 底池
-                    bet_size = int(pot * random.uniform(0.5, 1.0) * self.aggression)
-                    raise_amt = max(moves.raise_range.start, min(bet_size, moves.raise_range.stop - 1))
-                    return ActionType.RAISE, raise_amt
-                if can_call:
-                    return ActionType.CALL, None
-                if can_check:
-                    return ActionType.CHECK, None
-
-            elif strength > 0.5:  # 中等牌
-                if can_check:
-                    return ActionType.CHECK, None
-                if can_call and rand < 0.7:
-                    return ActionType.CALL, None
-                if can_raise and rand < 0.2 * self.aggression and moves.raise_range:
-                    raise_amt = moves.raise_range.start
-                    return ActionType.RAISE, raise_amt
-                if can_fold and rand > 0.5:
-                    return ActionType.FOLD, None
-                if can_call:
-                    return ActionType.CALL, None
-
-            else:  # 弱牌
-                # 诈唬
-                if can_raise and rand < self.bluff_frequency and moves.raise_range:
                     bet_size = int(pot * 0.5)
                     raise_amt = max(moves.raise_range.start, min(bet_size, moves.raise_range.stop - 1))
                     return ActionType.RAISE, raise_amt
                 if can_check:
                     return ActionType.CHECK, None
+                # 小概率跟注
+                if can_call and rand < 0.15:
+                    return ActionType.CALL, None
                 if can_fold:
                     return ActionType.FOLD, None
 

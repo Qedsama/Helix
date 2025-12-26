@@ -30,7 +30,8 @@ class Config:
         'http://47.115.224.89:5173',
         'http://47.115.224.89:5174',
         'tauri://localhost',
-        'https://tauri.localhost'
+        'https://tauri.localhost',
+        'http://tauri.localhost'
     ]
 
 

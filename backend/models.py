@@ -20,8 +20,7 @@ class Asset(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    type = db.Column(db.String(50), nullable=False)  # 保留原有类型字段
-    category = db.Column(db.String(20), nullable=False, default='现金')  # 新增分类字段
+    category = db.Column(db.String(20), nullable=False, default='现金')
     amount = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, server_default=func.now())
     updated_at = db.Column(db.DateTime, server_default=func.now(), onupdate=func.now())

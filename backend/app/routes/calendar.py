@@ -66,7 +66,6 @@ def create_event():
         description=data.get('description'),
         start_time=start_time,
         end_time=end_time,
-        event_type=data.get('event_type', 'other'),
         shared=data.get('shared', False),
         user_id=session['user_id']
     )
@@ -100,7 +99,6 @@ def update_event(event_id):
         except ValueError:
             return jsonify({'success': False, 'error': '日期格式无效，应为 YYYY-MM-DD'}), 400
 
-    event.event_type = data.get('event_type', event.event_type)
     event.shared = data.get('shared', event.shared)
 
     db.session.commit()

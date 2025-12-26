@@ -1,9 +1,17 @@
 """Authentication routes."""
+import os
+import uuid
 import jwt
 from datetime import datetime, timedelta
 from flask import Blueprint, request, session, jsonify, current_app
 from models import db, User
 from app.utils import require_auth
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 bp = Blueprint('auth', __name__)
 
@@ -151,4 +159,41 @@ def update_profile():
             'username': user.username,
             'avatar': user.avatar
         }
+    })
+
+
+@bp.route('/api/user/avatar', methods=['POST'])
+@require_auth
+def upload_avatar():
+    """Upload user avatar image."""
+    if 'avatar' not in request.files:
+        return jsonify({'success': False, 'error': '没有选择图片'}), 400
+
+    file = request.files['avatar']
+    if file.filename == '':
+        return jsonify({'success': False, 'error': '没有选择图片'}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({'success': False, 'error': '不支持的图片格式'}), 400
+
+    # Generate unique filename
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    filename = f"avatar_{session['user_id']}_{uuid.uuid4().hex[:8]}.{ext}"
+
+    # Ensure upload directory exists
+    upload_dir = os.path.join(current_app.root_path, '..', 'static', 'uploads')
+    os.makedirs(upload_dir, exist_ok=True)
+
+    # Save file
+    filepath = os.path.join(upload_dir, filename)
+    file.save(filepath)
+
+    # Update user avatar in database
+    user = User.query.get(session['user_id'])
+    user.avatar = f'/static/uploads/{filename}'
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'avatar': user.avatar
     })

@@ -1,10 +1,19 @@
 """Chat routes."""
-from flask import Blueprint, request, session, jsonify
+import os
+import uuid
+from flask import Blueprint, request, session, jsonify, current_app
 from sqlalchemy.orm import joinedload
+from werkzeug.utils import secure_filename
 from models import db, ChatMessage, ChatReaction
 from app.utils import require_auth
 
 bp = Blueprint('chat', __name__)
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def serialize_reactions(reactions):
@@ -135,3 +144,50 @@ def remove_reaction(message_id, emoji):
     db.session.delete(reaction)
     db.session.commit()
     return jsonify({'success': True})
+
+
+@bp.route('/api/chat/upload_image', methods=['POST'])
+@require_auth
+def upload_image():
+    """Upload an image for chat."""
+    if 'image' not in request.files:
+        return jsonify({'success': False, 'error': '没有选择图片'}), 400
+
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'success': False, 'error': '没有选择图片'}), 400
+
+    if not allowed_file(file.filename):
+        return jsonify({'success': False, 'error': '不支持的图片格式'}), 400
+
+    # Generate unique filename
+    ext = file.filename.rsplit('.', 1)[1].lower()
+    filename = f"{uuid.uuid4().hex}.{ext}"
+
+    # Ensure upload directory exists
+    upload_dir = os.path.join(current_app.root_path, '..', 'static', 'uploads', 'chat_images')
+    os.makedirs(upload_dir, exist_ok=True)
+
+    # Save file
+    filepath = os.path.join(upload_dir, filename)
+    file.save(filepath)
+
+    # Create chat message with image
+    current_user_id = session['user_id']
+    receiver_id = 2 if current_user_id == 1 else 1
+
+    message = ChatMessage(
+        content='[图片]',
+        sender_id=current_user_id,
+        receiver_id=receiver_id,
+        message_type='image',
+        image_filename=f'/static/uploads/chat_images/{filename}'
+    )
+    db.session.add(message)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'id': message.id,
+        'image_url': f'/static/uploads/chat_images/{filename}'
+    })
