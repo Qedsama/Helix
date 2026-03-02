@@ -55,31 +55,38 @@ def load_user_from_token():
 
 @bp.route('/api/login', methods=['POST'])
 def login():
-    """User login."""
+    """User login with password."""
     data = request.get_json()
     if not data:
         return jsonify({'success': False, 'message': '无效请求'}), 400
 
     username = data.get('username')
+    password = data.get('password', '')
+
     if not username:
         return jsonify({'success': False, 'message': '用户名不能为空'}), 400
 
     user = User.query.filter_by(username=username).first()
-    if user:
-        token = generate_token(user)
-        session['user_id'] = user.id
-        session['username'] = user.username
-        return jsonify({
-            'success': True,
-            'message': '登录成功',
-            'token': token,
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'avatar': user.avatar
-            }
-        })
-    return jsonify({'success': False, 'message': '用户不存在'}), 401
+    if not user:
+        return jsonify({'success': False, 'message': '用户不存在'}), 401
+
+    # 验证密码
+    if not user.check_password(password):
+        return jsonify({'success': False, 'message': '密码错误'}), 401
+
+    token = generate_token(user)
+    session['user_id'] = user.id
+    session['username'] = user.username
+    return jsonify({
+        'success': True,
+        'message': '登录成功',
+        'token': token,
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'avatar': user.avatar
+        }
+    })
 
 
 @bp.route('/api/check-auth')
@@ -197,3 +204,35 @@ def upload_avatar():
         'success': True,
         'avatar': user.avatar
     })
+
+
+@bp.route('/api/user/password', methods=['POST'])
+@require_auth
+def change_password():
+    """Change user password."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': '无效请求'}), 400
+
+    old_password = data.get('old_password', '')
+    new_password = data.get('new_password', '')
+
+    if not new_password:
+        return jsonify({'success': False, 'error': '新密码不能为空'}), 400
+
+    if len(new_password) < 4:
+        return jsonify({'success': False, 'error': '密码长度至少4位'}), 400
+
+    user = User.query.get(session['user_id'])
+    if not user:
+        return jsonify({'success': False, 'error': '用户不存在'}), 404
+
+    # 验证旧密码
+    if not user.check_password(old_password):
+        return jsonify({'success': False, 'error': '当前密码错误'}), 401
+
+    # 设置新密码
+    user.set_password(new_password)
+    db.session.commit()
+
+    return jsonify({'success': True, 'message': '密码修改成功'})

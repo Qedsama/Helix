@@ -14,6 +14,8 @@ import Calendar from './pages/Calendar';
 import Poker from './pages/Poker';
 import PokerGame from './pages/PokerGame';
 import Settings from './pages/Settings';
+import Travel from './pages/Travel';
+import Learning from './pages/Learning';
 
 const App = () => {
   const { checkAuth, isLoading } = useAuthStore();
@@ -54,6 +56,8 @@ const App = () => {
           <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
           <Route path="/poker" element={<ProtectedRoute><Poker /></ProtectedRoute>} />
           <Route path="/poker/game/:gameId" element={<ProtectedRoute><PokerGame /></ProtectedRoute>} />
+          <Route path="/travel" element={<ProtectedRoute><Travel /></ProtectedRoute>} />
+          <Route path="/learning" element={<ProtectedRoute><Learning /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />

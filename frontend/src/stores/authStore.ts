@@ -8,7 +8,7 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (username: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -19,9 +19,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isLoading: true,
 
-  login: async (username: string) => {
+  login: async (username: string, password: string) => {
     try {
-      const response = await authApi.login(username);
+      const response = await authApi.login(username, password);
       if (response.data.success) {
         // Save token
         if (response.data.token) {
@@ -32,11 +32,12 @@ export const useAuthStore = create<AuthState>((set) => ({
           user: response.data.user,
           isAuthenticated: true,
         });
-        return true;
+        return { success: true };
       }
-      return false;
-    } catch {
-      return false;
+      return { success: false, message: response.data.message };
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      return { success: false, message: err.response?.data?.message || '登录失败' };
     }
   },
 

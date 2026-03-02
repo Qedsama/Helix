@@ -1,7 +1,7 @@
 """Flask application factory."""
 import os
 import logging
-from flask import Flask, render_template, jsonify
+from flask import Flask, send_from_directory, jsonify
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .config import config
@@ -11,6 +11,9 @@ from .routes import all_blueprints
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Path to frontend dist directory
+FRONTEND_DIST = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../frontend/dist'))
 
 
 def create_app(config_name=None):
@@ -27,7 +30,7 @@ def create_app(config_name=None):
 
     app = Flask(__name__,
                 static_folder='../static',
-                template_folder='../templates')
+                template_folder=FRONTEND_DIST)
 
     # Load configuration
     app.config.from_object(config[config_name])
@@ -45,13 +48,18 @@ def create_app(config_name=None):
     for blueprint in all_blueprints:
         app.register_blueprint(blueprint)
 
+    # Serve frontend static assets from dist/assets
+    @app.route('/assets/<path:filename>')
+    def serve_frontend_assets(filename):
+        return send_from_directory(os.path.join(FRONTEND_DIST, 'assets'), filename)
+
     # SPA catch-all route
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')
     def serve_spa(path):
         if path.startswith('api/') or path.startswith('static/') or path.startswith('poker/'):
             return jsonify({'error': 'Not found'}), 404
-        return render_template('index.html')
+        return send_from_directory(FRONTEND_DIST, 'index.html')
 
     # Initialize database
     with app.app_context():
@@ -64,8 +72,26 @@ def create_app(config_name=None):
 def init_db(app):
     """Initialize the database with default data."""
     from models import User
+    from sqlalchemy import text
 
     db.create_all()
+
+    # Auto-migration: add missing columns to travel_itineraries
+    with db.engine.connect() as conn:
+        try:
+            columns = [row[1] for row in conn.execute(text("PRAGMA table_info(travel_itineraries)"))]
+            if columns:  # table exists
+                if 'check_in_day' not in columns:
+                    conn.execute(text("ALTER TABLE travel_itineraries ADD COLUMN check_in_day INTEGER"))
+                    logger.info('Added check_in_day column to travel_itineraries')
+                if 'check_out_day' not in columns:
+                    conn.execute(text("ALTER TABLE travel_itineraries ADD COLUMN check_out_day INTEGER"))
+                    logger.info('Added check_out_day column to travel_itineraries')
+                # Migrate legacy 'flight' category to 'transport'
+                conn.execute(text("UPDATE travel_itineraries SET category='transport' WHERE category='flight'"))
+                conn.commit()
+        except Exception as e:
+            logger.warning(f'Migration check skipped: {e}')
 
     # Create initial users if not exist
     if User.query.count() == 0:

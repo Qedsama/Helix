@@ -7,6 +7,9 @@ from . import calendar
 from . import chat
 from . import poker
 from . import dashboard
+from . import travel
+from . import travel_ai
+from . import learning
 
 # All blueprints to register
 all_blueprints = [
@@ -18,4 +21,7 @@ all_blueprints = [
     chat.bp,
     poker.bp,
     dashboard.bp,
+    travel.bp,
+    travel_ai.bp,
+    learning.bp,
 ]

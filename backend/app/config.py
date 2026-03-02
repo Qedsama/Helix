@@ -9,6 +9,15 @@ class Config:
     SQLALCHEMY_DATABASE_URI = 'sqlite:///helix.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # AI服务配置 - 通义千问 (Qwen)
+    # 申请地址: https://dashscope.console.aliyun.com/
+    DASHSCOPE_API_KEY = os.environ.get('DASHSCOPE_API_KEY', 'sk-b26ae2655f744052916b46ad02eebc28')
+    QWEN_MODEL = 'qwen3-max-2026-01-23'  # 通义千问3 Max
+
+    # 高德地图API配置
+    # 申请地址: https://lbs.amap.com/dev/key/app
+    AMAP_API_KEY = os.environ.get('AMAP_API_KEY', '696a8bac3cd37428b5bd82a6334cc586')
+
     # Session cookie settings for cross-origin requests
     SESSION_COOKIE_SAMESITE = 'None'
     SESSION_COOKIE_SECURE = False  # Set True if using HTTPS

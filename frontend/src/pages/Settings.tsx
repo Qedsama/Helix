@@ -11,7 +11,8 @@ import {
   SaveOutlined,
   InfoCircleOutlined,
   BulbOutlined,
-  CameraOutlined
+  CameraOutlined,
+  LockOutlined
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -21,8 +22,10 @@ const Settings: React.FC = () => {
   const { mode, setTheme } = useThemeStore();
   const navigate = useNavigate();
   const [form] = Form.useForm();
+  const [passwordForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const {
     token: { colorBgContainer },
@@ -97,6 +100,28 @@ const Settings: React.FC = () => {
       antMessage.error('保存失败');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async (values: { oldPassword: string; newPassword: string; confirmPassword: string }) => {
+    if (values.newPassword !== values.confirmPassword) {
+      antMessage.error('两次输入的新密码不一致');
+      return;
+    }
+    setPasswordLoading(true);
+    try {
+      const response = await authApi.changePassword(values.oldPassword, values.newPassword);
+      if (response.data.success) {
+        antMessage.success('密码修改成功!');
+        passwordForm.resetFields();
+      } else {
+        antMessage.error(response.data.message || '密码修改失败');
+      }
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      antMessage.error(err.response?.data?.error || '密码修改失败');
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -175,6 +200,71 @@ const Settings: React.FC = () => {
                     </Form.Item>
                 </Form>
             </div>
+        </Card>
+      ),
+    },
+    {
+      key: 'security',
+      label: (
+        <span>
+          <LockOutlined />
+          安全
+        </span>
+      ),
+      children: (
+        <Card bordered={false} title="修改密码">
+            <Form
+                form={passwordForm}
+                layout="vertical"
+                onFinish={handleChangePassword}
+                style={{ maxWidth: 400 }}
+            >
+                <Form.Item
+                    label="当前密码"
+                    name="oldPassword"
+                    rules={[{ required: true, message: '请输入当前密码' }]}
+                >
+                    <Input.Password placeholder="输入当前密码" prefix={<LockOutlined />} />
+                </Form.Item>
+
+                <Form.Item
+                    label="新密码"
+                    name="newPassword"
+                    rules={[
+                      { required: true, message: '请输入新密码' },
+                      { min: 4, message: '密码长度至少4位' }
+                    ]}
+                >
+                    <Input.Password placeholder="输入新密码" prefix={<LockOutlined />} />
+                </Form.Item>
+
+                <Form.Item
+                    label="确认新密码"
+                    name="confirmPassword"
+                    rules={[
+                      { required: true, message: '请再次输入新密码' },
+                      ({ getFieldValue }) => ({
+                        validator(_, value) {
+                          if (!value || getFieldValue('newPassword') === value) {
+                            return Promise.resolve();
+                          }
+                          return Promise.reject(new Error('两次输入的密码不一致'));
+                        },
+                      }),
+                    ]}
+                >
+                    <Input.Password placeholder="再次输入新密码" prefix={<LockOutlined />} />
+                </Form.Item>
+
+                <Form.Item>
+                    <Button type="primary" htmlType="submit" loading={passwordLoading} icon={<SaveOutlined />}>
+                        修改密码
+                    </Button>
+                </Form.Item>
+            </Form>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+                默认密码为 helix，建议首次登录后修改
+            </Text>
         </Card>
       ),
     },

@@ -15,6 +15,16 @@ import type {
   SuccessResponse,
   PokerState,
   User,
+  TravelPlansResponse,
+  TravelPlanDetailResponse,
+  AmapSearchResponse,
+  TravelPlan,
+  TravelItinerary,
+  AIChatMessage,
+  LearningQuestionsResponse,
+  LearningAnswerResponse,
+  LearningGenerateResponse,
+  LearningStatsResponse,
 } from '../types';
 
 // Production API URL - change this for different deployments
@@ -60,8 +70,8 @@ api.interceptors.response.use(
 
 // Auth API
 export const authApi = {
-  login: (username: string): Promise<AxiosResponse<LoginResponse>> =>
-    api.post('/api/login', { username }),
+  login: (username: string, password: string): Promise<AxiosResponse<LoginResponse>> =>
+    api.post('/api/login', { username, password }),
   logout: (): Promise<AxiosResponse<SuccessResponse>> =>
     api.get('/api/logout'),
   checkAuth: (): Promise<AxiosResponse<AuthCheckResponse>> =>
@@ -74,6 +84,8 @@ export const authApi = {
     api.post('/api/user/avatar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
+  changePassword: (oldPassword: string, newPassword: string): Promise<AxiosResponse<SuccessResponse>> =>
+    api.post('/api/user/password', { old_password: oldPassword, new_password: newPassword }),
 };
 
 // Assets API
@@ -183,6 +195,90 @@ export const pokerApi = {
 export const dashboardApi = {
   getData: (): Promise<AxiosResponse<{ success: boolean; data: unknown }>> =>
     api.get('/api/dashboard'),
+};
+
+// Travel API - 旅行计划
+export const travelApi = {
+  // 计划 CRUD
+  getPlans: (): Promise<AxiosResponse<TravelPlansResponse>> =>
+    api.get('/api/travel/plans'),
+  
+  getPlan: (planId: number): Promise<AxiosResponse<TravelPlanDetailResponse>> =>
+    api.get(`/api/travel/plans/${planId}`),
+  
+  createPlan: (data: Partial<TravelPlan>): Promise<AxiosResponse<CreateResponse>> =>
+    api.post('/api/travel/plans', data),
+  
+  updatePlan: (planId: number, data: Partial<TravelPlan>): Promise<AxiosResponse<SuccessResponse>> =>
+    api.put(`/api/travel/plans/${planId}`, data),
+  
+  deletePlan: (planId: number): Promise<AxiosResponse<SuccessResponse>> =>
+    api.delete(`/api/travel/plans/${planId}`),
+  
+  // 行程项目
+  addItinerary: (planId: number, data: Partial<TravelItinerary>): Promise<AxiosResponse<CreateResponse>> =>
+    api.post(`/api/travel/plans/${planId}/itineraries`, data),
+  
+  updateItinerary: (itemId: number, data: Partial<TravelItinerary>): Promise<AxiosResponse<SuccessResponse>> =>
+    api.put(`/api/travel/itineraries/${itemId}`, data),
+  
+  deleteItinerary: (itemId: number): Promise<AxiosResponse<SuccessResponse>> =>
+    api.delete(`/api/travel/itineraries/${itemId}`),
+
+  // 高德地图API
+  amapSearch: (params: { keywords: string; city?: string; types?: string }): Promise<AxiosResponse<AmapSearchResponse>> =>
+    api.get('/api/travel/amap/search', { params }),
+  
+  amapGeocode: (params: { address: string; city?: string }): Promise<AxiosResponse<{ success: boolean; result: { formatted_address: string; longitude: number; latitude: number; province: string; city: string; district: string } }>> =>
+    api.get('/api/travel/amap/geocode', { params }),
+
+  amapRegeo: (params: { location: string }): Promise<AxiosResponse<{ success: boolean; result: { province: string; city: string; district: string; formatted_address: string } }>> =>
+    api.get('/api/travel/amap/regeo', { params }),
+
+  amapDirection: (params: { origin: string; destination: string; mode: string; city?: string }): Promise<AxiosResponse<{ success: boolean; route: { origin: string; destination: string; taxi_cost?: number; paths: Array<{ distance: string; duration: string; strategy: string; toll: number; walking_distance?: string; cost?: number }> } }>> =>
+    api.get('/api/travel/amap/direction', { params }),
+
+  // AI对话规划（Function Calling模式）
+  aiChat: (messages: AIChatMessage[]): Promise<AxiosResponse<{
+    success: boolean;
+    message: string;
+    tool_calls: Array<{
+      tool_name: string;
+      arguments: Record<string, unknown>;
+      result: { success: boolean; message?: string; error?: string; [key: string]: unknown };
+    }>;
+    error?: string;
+  }>> =>
+    api.post('/api/travel/ai/chat', { messages }),
+
+  // 用户体验记录
+  addReview: (itemId: number, data: { review?: string; rating?: number; actual_cost?: number; visited?: boolean }): Promise<AxiosResponse<SuccessResponse>> =>
+    api.post(`/api/travel/itineraries/${itemId}/review`, data),
+
+  // 上传行程照片
+  uploadItineraryPhoto: (itemId: number, formData: FormData): Promise<AxiosResponse<{ success: boolean; filename?: string; url?: string; error?: string }>> =>
+    api.post(`/api/travel/itineraries/${itemId}/photos`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+
+  // 删除行程照片
+  deleteItineraryPhoto: (itemId: number, filename: string): Promise<AxiosResponse<SuccessResponse>> =>
+    api.delete(`/api/travel/itineraries/${itemId}/photos/${filename}`),
+};
+
+// Learning API - 学习测验
+export const learningApi = {
+  generate: (): Promise<AxiosResponse<LearningGenerateResponse>> =>
+    api.post('/api/learning/generate'),
+
+  getQuestions: (date?: string): Promise<AxiosResponse<LearningQuestionsResponse>> =>
+    api.get('/api/learning/questions', { params: { date } }),
+
+  submitAnswer: (data: { question_id: number; selected_answer: string; time_spent?: number }): Promise<AxiosResponse<LearningAnswerResponse>> =>
+    api.post('/api/learning/answer', data),
+
+  getStats: (): Promise<AxiosResponse<LearningStatsResponse>> =>
+    api.get('/api/learning/stats'),
 };
 
 // File validation helpers

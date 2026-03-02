@@ -14,7 +14,9 @@ import {
   LogoutOutlined,
   CrownOutlined,
   SunOutlined,
-  MoonOutlined
+  MoonOutlined,
+  CompassOutlined,
+  BookOutlined
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -31,6 +33,8 @@ const navItems: NavItem[] = [
   { path: '/chat', icon: <MessageOutlined style={{ fontSize: '20px' }} />, label: '聊天' },
   { path: '/photos', icon: <PictureOutlined style={{ fontSize: '20px' }} />, label: '照片墙' },
   { path: '/calendar', icon: <CalendarOutlined style={{ fontSize: '20px' }} />, label: '日历' },
+  { path: '/travel', icon: <CompassOutlined style={{ fontSize: '20px' }} />, label: '旅行' },
+  { path: '/learning', icon: <BookOutlined style={{ fontSize: '20px' }} />, label: '学习' },
   { path: '/poker', icon: <CrownOutlined style={{ fontSize: '20px' }} />, label: '扑克' },
 ];
 
@@ -39,6 +43,7 @@ interface BaseLayoutProps {
   title?: string;
   subtitle?: string;
   headerActions?: React.ReactNode;
+  fullscreen?: boolean;  // 全屏模式，去除padding和maxWidth限制
 }
 
 export const BaseLayout: React.FC<BaseLayoutProps> = ({
@@ -46,6 +51,7 @@ export const BaseLayout: React.FC<BaseLayoutProps> = ({
   title,
   subtitle,
   headerActions,
+  fullscreen = false,
 }) => {
   const { user, logout } = useAuthStore();
   const { mode, toggleTheme } = useThemeStore();
@@ -219,15 +225,19 @@ export const BaseLayout: React.FC<BaseLayoutProps> = ({
 
         <Content 
             style={{ 
-                padding: 24, 
+                padding: fullscreen ? 0 : 24, 
                 margin: 0, 
-                overflow: 'auto',
+                overflow: fullscreen ? 'hidden' : 'auto',
                 background: colorBgLayout
             }}
         >
-             <div style={{ maxWidth: 1200, margin: '0 auto', height: '100%' }}>
+             <div style={{ 
+               maxWidth: fullscreen ? 'none' : 1200, 
+               margin: fullscreen ? 0 : '0 auto', 
+               height: '100%' 
+             }}>
                {/* Page Header within content if needed */}
-               {(title || subtitle) && (
+               {!fullscreen && (title || subtitle) && (
                    <div style={{ marginBottom: 24 }}>
                        {title && !currentNav && <h1 style={{ margin: 0, fontSize: 24 }}>{title}</h1>}
                        {subtitle && <p style={{ color: colorTextSecondary, marginTop: 8 }}>{subtitle}</p>}
